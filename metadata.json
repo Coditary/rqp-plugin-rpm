@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
-  "name": "template",
+  "name": "rpm",
   "version": "0.1.0",
-  "summary": "Template wrapper plugin",
-  "description": "ReqPack wrapper template bundle",
+  "summary": "RPM wrapper plugin",
+  "description": "ReqPack wrapper for rpm with optional dnf/yum fallbacks",
   "license": "MIT"
 }

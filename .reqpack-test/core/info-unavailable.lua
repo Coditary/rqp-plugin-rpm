@@ -1,19 +1,17 @@
 return {
-  name = "rpm update without repo helper fails",
+  name = "rpm info emits unavailable without helpers",
   request = {
-    action = "update",
+    action = "info",
     system = "rpm",
-    packages = {
-      { name = "curl" }
-    },
+    prompt = "missing-package",
   },
   fakeExec = {
     {
-      match = "command -v 'rpm' >/dev/null 2>&1",
-      exitCode = 0,
+      match = "rpm -qi 'missing-package'",
+      exitCode = 1,
       stdout = "",
-      stderr = "",
-      success = true,
+      stderr = "package missing-package is not installed\n",
+      success = false,
     },
     {
       match = "command -v 'dnf' >/dev/null 2>&1",
@@ -33,12 +31,14 @@ return {
   expect = {
     success = false,
     commands = {
+      "rpm -qi 'missing-package'",
       "command -v 'dnf' >/dev/null 2>&1",
       "command -v 'yum' >/dev/null 2>&1"
     },
-    events = { "failed" },
+    stderr = { "package missing-package is not installed\n" },
+    events = { "unavailable" },
     eventPayloads = {
-      failed = "repo update requires dnf or yum",
+      unavailable = "{name=missing-package, packageType=rpm}",
     },
   }
 }

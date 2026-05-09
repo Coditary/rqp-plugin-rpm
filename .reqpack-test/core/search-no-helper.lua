@@ -1,11 +1,9 @@
 return {
-  name = "rpm install via dnf",
+  name = "rpm search without repo helper returns empty",
   request = {
-    action = "install",
+    action = "search",
     system = "rpm",
-    packages = {
-      { name = "curl", version = "8.0.1" }
-    },
+    prompt = "jq",
   },
   fakeExec = {
     {
@@ -17,30 +15,29 @@ return {
     },
     {
       match = "command -v 'dnf' >/dev/null 2>&1",
-      exitCode = 0,
+      exitCode = 1,
       stdout = "",
       stderr = "",
-      success = true,
+      success = false,
     },
     {
-      match = "dnf install -y 'curl-8.0.1'",
-      exitCode = 0,
-      stdout = "installed\n",
+      match = "command -v 'yum' >/dev/null 2>&1",
+      exitCode = 1,
+      stdout = "",
       stderr = "",
-      success = true,
+      success = false,
     }
   },
   expect = {
     success = true,
     commands = {
       "command -v 'dnf' >/dev/null 2>&1",
-      "dnf install -y 'curl-8.0.1'"
+      "command -v 'yum' >/dev/null 2>&1"
     },
-    stdout = { "installed\n" },
-    events = { "installed", "success" },
+    events = { "searched" },
     eventPayloads = {
-      installed = "<lua-value>",
-      success = "ok",
+      searched = "{}",
     },
+    resultCount = 0,
   }
 }

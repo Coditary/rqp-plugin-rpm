@@ -12,7 +12,7 @@ defaults:
     shell: bash
 
 env:
-  REQPACK_RUNTIME_TAG: v1.0.12
+  REQPACK_RUNTIME_TAG: v1.0.15
 
 jobs:
   system-tests-linux:
@@ -53,14 +53,14 @@ jobs:
         run: |
           tmp_dir="$(mktemp -d)"
           trap 'rm -rf "$tmp_dir"' EXIT INT TERM HUP
-          plugin_dir="$tmp_dir/template-wrapper"
+          plugin_dir="$tmp_dir/rpm"
           mkdir -p "$plugin_dir/scripts"
           cp metadata.json "$plugin_dir/metadata.json"
           python3 - <<'PY' "$plugin_dir/metadata.json"
 import json, pathlib, sys
 path = pathlib.Path(sys.argv[1])
 data = json.loads(path.read_text())
-data["name"] = "template-wrapper"
+data["name"] = "rpm"
 path.write_text(json.dumps(data, indent=2) + "\n")
 PY
           cp reqpack.lua "$plugin_dir/reqpack.lua"
@@ -73,7 +73,7 @@ PY
             -v "$tmp_dir:/fixtures" \
             --entrypoint /bin/sh \
             "ghcr.io/coditary/reqpack:${REQPACK_RUNTIME_TAG}" \
-            -lc 'rqp test-plugin --plugin /fixtures/template-wrapper --preset core'
+            -lc 'rqp test-plugin --plugin /fixtures/rpm --preset core'
 
   system-tests-macos:
     name: aarch64-darwin
@@ -103,14 +103,14 @@ PY
         run: |
           tmp_dir="$(mktemp -d)"
           trap 'rm -rf "$tmp_dir"' EXIT INT TERM HUP
-          plugin_dir="$tmp_dir/template-wrapper"
+          plugin_dir="$tmp_dir/rpm"
           mkdir -p "$plugin_dir/scripts"
           cp metadata.json "$plugin_dir/metadata.json"
           python3 - <<'PY' "$plugin_dir/metadata.json"
 import json, pathlib, sys
 path = pathlib.Path(sys.argv[1])
 data = json.loads(path.read_text())
-data["name"] = "template-wrapper"
+data["name"] = "rpm"
 path.write_text(json.dumps(data, indent=2) + "\n")
 PY
           cp reqpack.lua "$plugin_dir/reqpack.lua"

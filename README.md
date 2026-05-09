@@ -1,139 +1,52 @@
-# reqpack-plugin-template-wrapper
+# reqpack-plugin-rpm
 
-GitHub template for new ReqPack wrapper plugins.
+ReqPack wrapper for `rpm` with optional `dnf` or `yum` fallback for repository-backed operations.
 
-It ships a tiny no-op bundle skeleton that shows where plugin metadata, runtime code, install/remove hook stubs, and plugin tests belong.
+## Behavior
 
-## Included Files
+- `rpm` is required.
+- `dnf` is preferred optional helper for repo install, search, info, and outdated checks.
+- `yum` is used when `dnf` is not available.
+- local `.rpm` artifacts use `rpm -Uvh` directly.
+- removals use `rpm -e` directly.
+- read operations emit structured ReqPack package info and transaction progress.
 
-- `metadata.json`: plugin id and bundle metadata
-- `reqpack.lua`: plugin bundle manifest with `apiVersion` and `depends`
-- `run.lua`: full wrapper skeleton with common entry points
-- `scripts/install.lua`: package install hook stub required by bundle format
-- `scripts/remove.lua`: package remove hook stub required by bundle format
-- `API.md`: small API quick reference based on `ReqPack.wiki`
-- `.reqpack-test/core/*.lua`: starter conformance cases for core wrapper paths
+## Supported Paths
 
-## How To Use
+- `install`: repo package names through `dnf` or `yum`
+- `installLocal`: local `.rpm` files through `rpm`
+- `remove`: installed packages through `rpm`
+- `update`: repo-backed updates through `dnf` or `yum`
+- `list`: installed packages through `rpm -qa`
+- `search`: repo search through `dnf` or `yum`
+- `info`: installed package info via `rpm -qi`, fallback to `dnf info` or `yum info`
+- `outdated`: repo update check through `dnf check-update` or `yum check-update`
 
-1. Create a new repository from this template.
-2. Edit `metadata.json` so `name` matches your plugin id.
-3. Replace placeholder metadata in `run.lua` methods such as `getName()`, `getVersion()`, and `getCategories()`.
-4. Add plugin dependencies to `reqpack.lua` `depends` if your wrapper needs other ReqPack systems.
-5. Add real package-manager logic to `install`, `remove`, `update`, `list`, `search`, and `info`.
-6. Adjust `.reqpack-test/core/*.lua` so they match your plugin behavior.
+If no repo helper exists, `search()` and `outdated()` return empty results, while named-package `install()` and `update()` fail explicitly.
 
-## Recommended Workflow
+## Files
 
-For most wrapper plugins, this repository already contains enough to start.
-Use full ReqPack wiki only when a runtime detail is still unclear.
+- `run.lua`: main wrapper logic
+- `metadata.json`: bundle metadata
+- `reqpack.lua`: ReqPack manifest
+- `.reqpack-test/core/*.lua`: hermetic conformance cases
 
-Work in this order:
+## Testing
 
-1. Read `API.md`.
-2. Edit `metadata.json` first.
-3. Replace all `template` placeholders.
-4. Add package-manager existence check in `plugin.init()`.
-5. Implement wrapper methods.
-6. Update `.reqpack-test/core/*.lua`.
-   If `init()` runs commands, add matching `fakeExec` rules in tests.
-7. Run `rqp test-plugin --plugin . --preset core` from template root.
-
-## File Guide
-
-Before filling in real behavior, read `API.md`.
-It is short and points back to full docs in `ReqPack.wiki/Extending-Writing-Lua-Plugins.md`.
-
-### `run.lua`
-
-Main wrapper file.
-
-Important sections:
-
-- helper functions at top for small reusable utilities
-- metadata methods for plugin name, version, requirements, categories
-- command methods for install/remove/update/list/search/info
-- lifecycle methods `init()` and `shutdown()`
-
-The shipped implementation is intentionally empty.
-It returns safe defaults and emits a few example events so test cases show expected result shapes.
-
-### `metadata.json`
-
-Bundle metadata.
-
-- `name` is plugin id used for discovery
-- `version` is bundle version
-- `summary`, `description`, and `license` are required
-
-### `reqpack.lua`
-
-Bundle manifest.
-
-- keep `apiVersion = 1`
-- declare plugin dependencies in `depends = { "sys:java" }` style when needed
-
-### `scripts/install.lua` and `scripts/remove.lua`
-
-Required bundle hook files.
-
-Wrapper plugins usually keep these as tiny `return true` stubs.
-ReqPack requires them for bundle validity even when wrapper logic lives in `run.lua`.
-
-### `.reqpack-test/core/*.lua`
-
-Hermetic plugin tests.
-
-Template ships starter cases for:
-
-- `install`
-- `installLocal`
-- `remove`
-- `update`
-- `list`
-- `search`
-- `info`
-- `outdated`
-
-They show how ReqPack test cases are structured:
-
-- `request`
-- `fakeExec`
-- `expect`
-
-## Running Plugin Tests
-
-From template root, run:
+Run core plugin tests from repository root:
 
 ```bash
 rqp test-plugin --plugin . --preset core
 ```
 
-Or point at bundle directory from parent directory:
-
-```bash
-rqp test-plugin --plugin ./your-plugin-dir --preset core
-```
-
-You can also run one case directly:
+Run one case directly:
 
 ```bash
 rqp test-plugin --plugin . --case ./.reqpack-test/core/info.lua
 ```
 
-## CI
-
-Template repo validates itself in GitHub Actions.
-
-- Linux amd64 and arm64 jobs use Podman with published `ghcr.io/coditary/reqpack:<tag>` runtime.
-- macOS arm64 job downloads published Darwin release bundle and runs it natively.
-- CI checks direct bundle-directory execution and copied bundle-directory execution.
-
-If template starts depending on newer ReqPack runtime behavior, update workflow variable `REQPACK_RUNTIME_TAG`.
-
 ## Notes
 
-- Keep comments short.
-- Prefer small helper functions over repeated shell string building.
-- Emit `context.events.*` when returning package information so ReqPack can record useful results.
-- Once plugin does real work, update tests before expanding behavior.
+- wrapper stays thin and defers real package work to system tools
+- parser is conservative and skips malformed lines instead of crashing whole read action
+- returned package info keeps ReqPack-friendly fields such as `packageId`, `status`, `installed`, and `packageType`
